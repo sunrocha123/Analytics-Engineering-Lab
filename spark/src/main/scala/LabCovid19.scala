@@ -88,6 +88,7 @@ object LabCovid19 extends App{
     ))
     .schema(schema)
     .csv("src/main/resources/data/owid-covid-data.csv")
+    .where(col("continent").isNotNull)
 
   //covidDF.show()
 
@@ -105,17 +106,76 @@ object LabCovid19 extends App{
 
   //qtdCountriesByContinent.show()
 
-  // TOP 5 países que tiveram mais novos casos no ano de 2020
+  // Quantidade de mortes por ano
+
+  val qtdDeathByYearAndContinent = covidDF
+    .groupBy(year(col("date")))
+    .agg(
+      sum(col("new_deaths")).as("qtd_deaths")
+    )
+    .orderBy(desc("qtd_deaths"))
+
+  //qtdDeathByYearAndContinent.show()
+
+  // TOP 2 continentes com maiores números de mortes e casos em 2022
+
+  val topTwoContinentMoreDeathCases2022 = covidDF
+    .where(year(col("date")) === 2022)
+    .groupBy(col("continent"))
+    .agg(
+      sum(col("new_cases")).as("qtd_cases"),
+      sum(col("new_deaths")).as("qtd_deaths")
+    )
+    .orderBy(col("qtd_cases").desc, col("qtd_deaths").desc)
+    .limit(2)
+
+  //topTwoContinentMoreDeathCases2022.show()
+
+  // TOP 5 países que tiveram mais casos no ano de 2021
 
   val topFiveCountriesMoreNewCases2020 = covidDF
-    .where(year(col("date")) === 2020)
+    .where(year(col("date")) === 2021)
     .groupBy(col("location"))
     .agg(
-      sum(col("new_cases")).as("qtd_new_cases")
+      sum(col("new_cases")).as("qtd_cases")
     )
-    .orderBy(desc("qtd_new_cases"))
+    .orderBy(desc("qtd_cases"))
     .limit(5)
 
   //topFiveCountriesMoreNewCases2020.show()
+
+  //covidDF.where(col("people_vaccinated").isNotNull).show()
+
+  // TOP 3 países que tiveram o maior número de mortes em 2021
+
+  val topThreeCountriesMoreNewDeaths2021 = covidDF
+    .where(year(col("date")) === 2021)
+    .groupBy(col("location"))
+    .agg(
+      sum(col("new_deaths")).as("qtd_deaths")
+    )
+    .orderBy(desc("qtd_deaths"))
+    .limit(3)
+
+  //topThreeCountriesMoreNewDeaths2021.show()
+
+  // Comparativo de mortes no 1º Semestre de 2020 X 2021 no Brasil
+
+  val CompDeathsSemesterInBrazil = covidDF
+    .where(col("location") === "Brazil")
+    .where(col("date").between("2020-01-01", "2020-06-30") or
+      col("date").between("2021-01-01", "2021-06-30")
+    )
+    .withColumn("semester", when(col("date").between("2020-01-01", "2020-06-30"), "1/2020")
+      .otherwise(lit("1/2021"))
+    )
+    .groupBy(col("semester"))
+    .agg(
+      sum(col("new_deaths")).as("sum_deaths"),
+      avg(col("new_deaths")).as("avg_deaths")
+    )
+    .orderBy(col("semester").desc)
+
+  //CompDeathsSemesterInBrazil.show()
 
 }
