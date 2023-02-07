@@ -144,8 +144,6 @@ object LabCovid19 extends App{
 
   //topFiveCountriesMoreNewCases2020.show()
 
-  //covidDF.where(col("people_vaccinated").isNotNull).show()
-
   // TOP 3 países que tiveram o maior número de mortes em 2021
 
   val topThreeCountriesMoreNewDeaths2021 = covidDF
@@ -161,7 +159,7 @@ object LabCovid19 extends App{
 
   // Comparativo de mortes no 1º Semestre de 2020 X 2021 no Brasil
 
-  val CompDeathsSemesterInBrazil = covidDF
+  val compDeathsSemesterInBrazil = covidDF
     .where(col("location") === "Brazil")
     .where(col("date").between("2020-01-01", "2020-06-30") or
       col("date").between("2021-01-01", "2021-06-30")
@@ -176,6 +174,31 @@ object LabCovid19 extends App{
     )
     .orderBy(col("semester").desc)
 
-  //CompDeathsSemesterInBrazil.show()
+  //compDeathsSemesterInBrazil.show()
+
+  // Volumetria de vacinados e casos no Brazil
+
+  val qtdVaccinatedCasesInBrazil = covidDF
+    .where(col("location") === "Brazil")
+    .withColumn("year_month", date_format(col("date"), "yyyy-MM"))
+    .groupBy(col("year_month"))
+    .agg(
+      sum(col("new_cases")).as("qtd_cases"),
+      sum(col("new_vaccinations")).as("qtd_vaccinated")
+    )
+    .orderBy(col("year_month"))
+
+  //qtdVaccinatedCasesInBrazil.show(50, truncate=false)
+
+  // Média de idades de casos por continente
+
+  val avgAgeCasesByCountries = covidDF
+    .groupBy(col("continent"))
+    .agg(
+      avg(col("median_age")).as("avg_age")
+    )
+    .orderBy(col("continent"))
+
+  //avgAgeCasesByCountries.show()
 
 }
